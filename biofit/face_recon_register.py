@@ -1,13 +1,14 @@
+import threading
 import cv2
 import datetime
 import face_recognition
 import numpy as np
 import repository as db
 import time
+from voice_handler import start_voice_control
+from command import get_command, clear
 
 cap = cv2.VideoCapture(0)
-foto_count = 0
-
 window_name = "SIAVIBioFitG4"
 cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 fonte = cv2.FONT_HERSHEY_SIMPLEX
@@ -16,12 +17,31 @@ players = db.get_data()
 saved_encodings = db.extract_encodings(players)
 player = None
 
+
 boot = True
 found = False
 register = False
 
+voice_thread = None
+voice_thread_stop_flag = threading.Event()
+
+registerIndex = 0
+name = None
+gender = None
+age = None
+
+
+def start_voice(language):
+    global voice_thread, voice_thread_stop_flag
+    voice_thread_stop_flag.clear()
+    model_path = f"./VoiceModels/vosk-model-{language}"
+    voice_thread = threading.Thread(target=start_voice_control, args=(model_path, voice_thread_stop_flag))
+    voice_thread.start()
+
+start_voice("en")
+
 def define_encoding(frame_rgb) -> bool:
-        global register
+        global register, player, name, gender, age
         face_locations = face_recognition.face_locations(frame_rgb)
 
         if not face_locations:
@@ -34,11 +54,12 @@ def define_encoding(frame_rgb) -> bool:
 
         if zona_esquerda < centro_x < zona_direita and zona_superior < centro_y < zona_inferior:
             encoding = face_recognition.face_encodings(frame_rgb, [face_locations[0]])[0]
-            db.register(db.Player(name="Rui",
-                    age=23,
-                    gender="M",
+            player = db.Player(name=name,
+                    age=age,
+                    gender=gender,
                     face_encoding=encoding.tolist())
-                    )
+                    
+            db.register(player)
             print("Face centralized. Encoding generated with success!")
             register = False
             return True
@@ -48,6 +69,7 @@ def define_encoding(frame_rgb) -> bool:
 
 ultimo_tempo = 0  # Marca do último momento em que executou
 intervalo = 2 
+
 
 while True:
     ret, frame = cap.read()
@@ -62,10 +84,10 @@ while True:
 
 
     if not found and not register:
-        (tw, th), _ = cv2.getTextSize("USER NOT FOUND!REGISTER?(r)",  cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)
+        (tw, th), _ = cv2.getTextSize("USER NOT FOUND!REGISTER?(r)", fonte, 0.9, 2)
         x = (largura - tw) // 2
         y = th + 10 
-        cv2.putText(frame, "USER NOT FOUND!REGISTER?(r)", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        cv2.putText(frame, "USER NOT FOUND!REGISTER?(r)", (x, y), fonte, 0.9, (0, 255, 0), 2)
 
         small_frame = cv2.resize(frame_rgb, (0, 0), fx=0.25, fy=0.25)
         face_locations = face_recognition.face_locations(small_frame)
@@ -103,14 +125,60 @@ while True:
         zona_superior = int(altura * 0.3)
         zona_inferior = int(altura * 0.7)
 
-        # Desenha um retângulo visual da zona central
+       
         cv2.rectangle(frame, (zona_esquerda, zona_superior), (zona_direita, zona_inferior), (255, 255, 0), 2)
+
+        if get_command() == "name":
+            clear()
+            registerIndex = 0
+        if get_command() == "gender":
+            clear()
+            registerIndex = 1
+        if get_command() == "age":
+            clear()
+            registerIndex = 2
+
+        if registerIndex == 0:
+            name = get_command().capitalize()
+            cv2.putText(frame,"Name: " + name,( int(0.01*largura) , int(0.45*altura)),fonte,0.6, (150, 200, 0), 2)
+        else:
+            cv2.putText(frame,"Name: " + (name if name else ""),( int(0.01*largura) , int(0.45*altura)),fonte,0.6, (255, 255, 0), 2)
+
+        if registerIndex == 1:
+            gender = get_command().capitalize()
+            cv2.putText(frame,"Gender: " + gender,( int(0.01*largura) , int(0.50*altura)),fonte,0.6, (150, 200, 0), 2)
+        else:
+            cv2.putText(frame,"Gender: " + (gender if gender else ""),( int(0.01*largura) , int(0.50*altura)),fonte,0.6, (255, 255, 0), 2)
+    
+        if registerIndex == 2:
+            age = str(get_command())
+            cv2.putText(frame,"Age: " + age,( int(0.01*largura) , int(0.55*altura)),fonte,0.6, (150, 200, 0), 2)
+        else:
+            cv2.putText(frame,"Age: " + (age if age else ""),( int(0.01*largura) , int(0.55*altura)),fonte,0.6, (255, 255, 0), 2)
+
+        if name and age and gender:
+            cv2.putText(frame,"Center face on square and",( int(0.20*largura) , int(0.8*altura)),fonte,0.9, (255, 255, 0), 2)
+            cv2.putText(frame,"Say 'Save' to complete",( int(0.25*largura) , int(0.85*altura)),fonte,0.9, (255, 255, 0), 2)
+            if get_command() == "save":
+                found = define_encoding(frame_rgb)
 
     if player and not register and found:
         cv2.putText(frame, "WELCOME " + player.name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
 
+        if get_command() == "log out":
+            player = None
+            found = False
+            register = False
+
     cv2.imshow(window_name, frame)
 
+    if not register and not found:
+        if get_command() == 'register':
+            register = True
+            clear()
+    
+    if get_command() == "exit":
+        break
 
     key = cv2.waitKey(1)
     if key == 27:
@@ -119,10 +187,12 @@ while True:
         if not found:
             found = define_encoding(frame_rgb)
     elif key == ord('r'):
-        if not register:
+        if not register and not found:
             register = True
             
 
 # Libera a câmera e fecha a janela
 cap.release()
 cv2.destroyAllWindows()
+voice_thread_stop_flag.set()
+voice_thread.join()
