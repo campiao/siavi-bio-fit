@@ -66,9 +66,10 @@ def define_encoding(frame_rgb) -> bool:
             print("Face detected, not centred.")
 
 
+initial_time = time.time()
 ultimo_tempo = 0  # Marca do último momento em que executou
 intervalo = 2 
-
+title = "SIAVIBioFIT"
 
 while True:
     ret, frame = cap.read()
@@ -81,13 +82,13 @@ while True:
     cv2.putText(frame, hora, (largura - 100, altura - 5), fonte, 1, (255, 255, 255), 2)
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+    (tw, th), _ = cv2.getTextSize(title, cv2.FONT_HERSHEY_DUPLEX, 2, 4)
+    x = (largura - tw) // 2
+    y = th + 10
+    cv2.putText(frame, title,(x, y), cv2.FONT_HERSHEY_DUPLEX, 2, (0, 0, 0), 8)  # border
+    cv2.putText(frame, title,(x,y), cv2.FONT_HERSHEY_DUPLEX, 2, (255, 255, 255), 4)
 
     if not found and not register:
-        (tw, th), _ = cv2.getTextSize("USER NOT FOUND!REGISTER?(r)", fonte, 0.9, 2)
-        x = (largura - tw) // 2
-        y = th + 10 
-        cv2.putText(frame, "USER NOT FOUND!REGISTER?(r)", (x, y), fonte, 0.9, (0, 255, 0), 2)
-
         small_frame = cv2.resize(frame_rgb, (0, 0), fx=0.25, fy=0.25)
         face_locations = face_recognition.face_locations(small_frame)
         nome = "Unknown"
@@ -116,6 +117,11 @@ while True:
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
             cv2.putText(frame, nome, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
         
+        if time.time() - initial_time > 2:
+            (tw, th), _ = cv2.getTextSize("USER NOT FOUND! REGISTER?", fonte, 0.9, 2)
+            x = (largura - tw) // 2
+            y = th + int(altura * 0.80)
+            cv2.putText(frame, "USER NOT FOUND! REGISTER?", (x, y), fonte, 0.9, (0, 255, 0), 2)
 
     if register:
         # Desenhar zona central de validação (ex: área de 40% central da tela)
@@ -164,13 +170,36 @@ while True:
                 found = define_encoding(frame_rgb)
 
     if player and not register and found:
-        cv2.putText(frame, "WELCOME " + player.name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
+        
+        text1 = "Face Detected"
+        text2 = "Welcome " + player.name + "!"
+
+        if time.time() - ultimo_tempo < 3:
+            (tw, th), _ = cv2.getTextSize(text1, fonte, 1, 2)
+            x = (largura - tw) // 2
+            y = th + int(altura * 0.70)
+            cv2.putText(frame, text1, (x, y), fonte, 1, (0, 0, 0), 4)
+            cv2.putText(frame, text1, (x, y), fonte, 1, (255, 255, 0), 2)
+
+        (tw, th), _ = cv2.getTextSize(text2, fonte, 1, 2)
+        x = (largura - tw) // 2
+        y = th + int(altura * 0.78)
+        cv2.putText(frame, text2, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 4)
+        cv2.putText(frame, text2, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
 
         if get_command() == "log out":
             clear()
             player = None
             found = False
             register = False
+
+        if time.time() - ultimo_tempo > 7:
+            print("Redirecionamento para detalhes")
+            text3 = "REDIRECTING TO EXERCISES"
+            (tw, th), _ = cv2.getTextSize(text3, fonte, 0.9, 2)
+            x = (largura - tw) // 2
+            y = th + int(altura * 0.93)
+            cv2.putText(frame, text3, (x, y), fonte, 0.9, (0, 255, 0), 2)
 
     cv2.imshow(window_name, frame)
 
