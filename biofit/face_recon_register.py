@@ -58,7 +58,6 @@ def define_encoding(frame_rgb) -> bool:
                     age=age,
                     gender=gender,
                     face_encoding=encoding.tolist())
-                    
             db.register(player)
             print("Face centralized. Encoding generated with success!")
             register = False
@@ -137,6 +136,8 @@ while True:
         if get_command() == "age":
             clear()
             registerIndex = 2
+        if get_command() == "save":
+            registerIndex = -1
 
         if registerIndex == 0:
             name = get_command().capitalize()
@@ -166,6 +167,7 @@ while True:
         cv2.putText(frame, "WELCOME " + player.name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
 
         if get_command() == "log out":
+            clear()
             player = None
             found = False
             register = False

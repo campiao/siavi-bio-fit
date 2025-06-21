@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass, asdict, field
 from typing import List
 
-db = 'database.json'
+db = "biofit/database.json"
 
 # Define o "model" como estrutura de dados
 @dataclass
