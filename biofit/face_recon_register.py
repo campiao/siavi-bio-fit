@@ -5,8 +5,10 @@ import face_recognition
 import numpy as np
 import repository as db
 import time
-from voice_handler import start_voice_control
+from voice_launcher import start_voice
 from command import get_command, clear
+import subprocess
+import sys
 
 cap = cv2.VideoCapture(0)
 window_name = "SIAVIBioFitG4"
@@ -30,15 +32,18 @@ name = None
 gender = None
 age = None
 
-
-def start_voice(language):
-    global voice_thread, voice_thread_stop_flag
-    voice_thread_stop_flag.clear()
-    model_path = f"./VoiceModels/vosk-model-{language}"
-    voice_thread = threading.Thread(target=start_voice_control, args=(model_path, voice_thread_stop_flag))
-    voice_thread.start()
-
 start_voice("en")
+
+def run_app_menu():
+    subprocess.Popen([sys.executable, "biofit/app_menu.py"])
+
+# Libera a câmera e fecha a janela
+def close_window():
+    voice_thread_stop_flag.set()
+    if voice_thread and voice_thread.is_alive():
+        voice_thread.join(timeout=2)  
+    cap.release()
+    cv2.destroyAllWindows()
 
 def define_encoding(frame_rgb) -> bool:
         global register, player, name, gender, age
@@ -108,6 +113,8 @@ while True:
                         nome = player.name
                         found = True
                         register = False
+                        with open("current_player_id.txt", "w") as f:
+                            f.write(player.id)
                 ultimo_tempo = agora
 
             top *= 4
@@ -194,12 +201,16 @@ while True:
             register = False
 
         if time.time() - ultimo_tempo > 7:
-            print("Redirecionamento para detalhes")
             text3 = "REDIRECTING TO EXERCISES"
             (tw, th), _ = cv2.getTextSize(text3, fonte, 0.9, 2)
             x = (largura - tw) // 2
             y = th + int(altura * 0.93)
             cv2.putText(frame, text3, (x, y), fonte, 0.9, (0, 255, 0), 2)
+            
+        if time.time() - ultimo_tempo > 9:
+            run_app_menu()
+            close_window()
+            break
 
     cv2.imshow(window_name, frame)
 
@@ -223,7 +234,4 @@ while True:
             
 
 # Libera a câmera e fecha a janela
-cap.release()
-cv2.destroyAllWindows()
-voice_thread_stop_flag.set()
-voice_thread.join()
+close_window()

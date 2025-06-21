@@ -68,6 +68,9 @@ while cap.isOpened():
     results = pose_model(frame, verbose=False, conf=0.5)
 
     for person in results:
+        if not results or len(results[0].keypoints.data) == 0:
+            continue  # ignora frame sem deteções
+        
         keypoints_tensor = person.keypoints.data[0]  # Shape: (17, 3)
 
         # Extract relevant keypoints and their confidences

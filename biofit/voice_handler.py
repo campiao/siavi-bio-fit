@@ -25,7 +25,10 @@ def listen_voice(model_path, stop_flag):
                            channels=1, callback=callback):
         print("Listening model:", model_path)
         while not stop_flag.is_set():
-            data = q.get()
+            try:
+                data = q.get(timeout=0.1)  # 100ms timeout
+            except queue.Empty:
+                continue  # no audio data, check flag again
             if rec.AcceptWaveform(data):
                 result = json.loads(rec.Result())
                 if 'text' in result and result['text']:
