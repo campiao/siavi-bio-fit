@@ -51,23 +51,22 @@ def update_player(player: Player) -> bool:
         with open(db, 'r', encoding='utf-8') as f:
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        data = []
+        data = {"Players": []}
 
     found = False
-    for i, item in enumerate(data):
-        if item.get(id) == player.get(id):
-            # Atualiza o item existente
-            data[i] = player
+    for i, item in enumerate(data["Players"]):
+        if item.get("id") == player.id:
+            data["Players"][i] = asdict(player)
             found = True
             break
 
     if not found:
-        data.append(player)
+        data["Players"].append(asdict(player))
 
-    # Salva no arquivo
     with open(db, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
+    return True
 
 if __name__ == "__main__":
     player1 = Player(

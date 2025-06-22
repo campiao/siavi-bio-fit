@@ -1,6 +1,8 @@
 import cv2
 from ultralytics import YOLO
 import numpy as np
+from repository import get_data
+from repository import update_player
 
 # Load Model
 pose_model = YOLO("yolov8s-pose.pt")
@@ -58,6 +60,19 @@ def calculate_joint_angle(point_a, point_b, point_c):
 
     return np.degrees(angle)
 
+# Load current player ID
+with open("current_player_id.txt", "r") as f:
+    current_id = f.read().strip()
+
+# Get all players
+players = get_data()
+
+# Find current player by ID
+current_player = next((p for p in players if p.id == current_id), None)
+
+# Calcula as reps necessárias com base no nível
+required_reps = 5 * current_player.level
+
 while cap.isOpened():
     success, frame = cap.read()
 
@@ -72,7 +87,7 @@ while cap.isOpened():
             continue  # ignora frame sem deteções
         
         keypoints_tensor = person.keypoints.data[0]  # Shape: (17, 3)
-
+        
         # Extract relevant keypoints and their confidences
         left_shoulder = keypoints_tensor[LEFT_SHOULDER_INDEX]
         left_elbow = keypoints_tensor[LEFT_ELBOW_INDEX]
@@ -101,22 +116,42 @@ while cap.isOpened():
             elif elbow_angle < 40 and curl_position_state == "down":
                 curl_position_state = "up"
                 bicep_curl_count += 1
-                print(f"Bicep Curl Count: {bicep_curl_count}")
+            
+            # repetições consoante o nível
+            if bicep_curl_count >= required_reps:
+                bicep_curl_count = 0
+                current_player.level += 1
+                print(f"LEVEL UP! New level: {current_player.level}")
+                required_reps = 5 * current_player.level
+                update_player(current_player)
+
         else:
             print("Low confidence keypoints – skipping this frame.")
             
         cv2.putText(
-            frame,
-            f"Curl Count: {bicep_curl_count}",
-            (50, 100),  # Position on screen (x, y)
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,          # Font scale
-            (255, 0, 0),  # Color (Blue in BGR)
-            2           # Thickness
+                frame,
+                f"Reps: {bicep_curl_count}/{required_reps}  |  Level: {current_player.level}",
+                (50, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 255),
+                2
         )
 
         # Show frame with pose overlay
-        annotated_frame = person.plot()
+        player = results[0]
+        annotated_frame = player.plot()
+
+        for i, box in enumerate(player.boxes):
+            x1, y1, x2, y2 = map(int, box.xyxy[0])  # bounding box
+            cv2.putText(
+                annotated_frame,
+                current_player.name,  # substitui por outro nome se necessário
+                (x1, y1 - 10),  # texto acima da caixa
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                (255, 255, 0), 2
+            )           
         cv2.imshow("Pose Detection", annotated_frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):

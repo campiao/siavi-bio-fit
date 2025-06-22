@@ -1,6 +1,8 @@
 import cv2
 from ultralytics import YOLO
 import numpy as np
+from repository import get_data
+from repository import update_player
 
 pose_model = YOLO("yolov8s-pose.pt")
 
@@ -16,6 +18,19 @@ raise_state = "down"  # could be "up" or "down"
 
 def is_arm_up(wrist_y, shoulder_y, threshold=30):
     return wrist_y <= shoulder_y - threshold  # braço está acima do ombro
+
+# Load current player ID
+with open("current_player_id.txt", "r") as f:
+    current_id = f.read().strip()
+
+# Get all players
+players = get_data()
+
+# Find current player by ID
+current_player = next((p for p in players if p.id == current_id), None)
+
+# Calcula as reps necessárias com base no nível
+required_reps = 5 * current_player.level
 
 while cap.isOpened():
     success, frame = cap.read()
@@ -51,10 +66,25 @@ while cap.isOpened():
                 raise_state = "down"
                 lateral_raise_count += 1
                 print(f"Lateral Raise Count: {lateral_raise_count}")
+            
+            # repetições consoante o nível
+            if lateral_raise_count >= required_reps:
+                lateral_raise_count = 0
+                current_player.level += 1
+                print(f"LEVEL UP! New level: {current_player.level}")
+                required_reps = 5 * current_player.level
+                update_player(current_player)
 
         # Mostrar contagem no ecrã
-        cv2.putText(frame, f"Count: {lateral_raise_count}", (50, 100),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        cv2.putText(
+                frame,
+                f"Reps: {lateral_raise_count}/{required_reps}  |  Level: {current_player.level}",
+                (50, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 255),
+                2
+        )
 
         annotated_frame = person.plot()
         cv2.imshow("Lateral Raise Detection", annotated_frame)

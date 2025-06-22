@@ -100,7 +100,6 @@ def update_player(player: Player) -> bool:
     conn.commit()
     conn.close()
 
-
 if __name__ == "__main__":
     player1 = Player(
         name="Alice",
