@@ -9,6 +9,7 @@ from voice_launcher import start_voice
 from command import get_command, clear
 import subprocess
 import sys
+import current_player
 
 cap = cv2.VideoCapture(0)
 window_name = "SIAVIBioFitG4"
@@ -64,6 +65,7 @@ def define_encoding(frame_rgb) -> bool:
                     gender=gender,
                     face_encoding=encoding.tolist())
             db.register(player)
+            current_player.set_player = player
             print("Face centralized. Encoding generated with success!")
             register = False
             return True
@@ -110,6 +112,7 @@ while True:
                         face_distances = face_recognition.face_distance(saved_encodings, face_encoding)
                         idx = np.argmin(face_distances)
                         player = players[idx]
+                        current_player.set_player = player
                         nome = player.name
                         found = True
                         register = False
@@ -196,6 +199,7 @@ while True:
 
         if get_command() == "log out":
             clear()
+            current_player.clear()
             player = None
             found = False
             register = False
