@@ -152,7 +152,7 @@ while cap.isOpened():
                 0.9,
                 (255, 255, 0), 2
             )           
-        cv2.imshow("Pose Detection", annotated_frame)
+        cv2.imshow("Bicep Curl Detection", annotated_frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break

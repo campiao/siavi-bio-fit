@@ -28,9 +28,6 @@ current_player = next((p for p in players if p.id == current_id), None)
 required_reps = 5 * current_player.level
 
 
-
-
-
 def calculate_distance(p1, p2):
     return np.linalg.norm(np.array(p1) - np.array(p2))
 
@@ -76,7 +73,7 @@ while cap.isOpened():
                     update_player(current_player)
 
         # Overlay info
-        cv2.putText(frame, f"Jumping Jacks: {jj_count}/{required_reps} | Level: {current_player.level}", (50, 100),
+        cv2.putText(frame, f"Reps: {jj_count}/{required_reps} | Level: {current_player.level}", (50, 100),
         cv2.FONT_HERSHEY_SIMPLEX,
         1,
         (0, 255, 255),
@@ -88,7 +85,7 @@ while cap.isOpened():
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             cv2.putText(annotated, current_player.name, (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-        cv2.imshow("Jumping Jacks Tracker", annotated)
+        cv2.imshow("Jumping Jacks Detection", annotated)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break

@@ -87,6 +87,16 @@ while cap.isOpened():
         )
 
         annotated_frame = person.plot()
+        for box in person.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])  # bounding box
+            cv2.putText(
+                annotated_frame,
+                current_player.name,  # substitui por outro nome se necessário
+                (x1, y1 - 10),  # texto acima da caixa
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                (255, 255, 0), 2
+            )           
         cv2.imshow("Lateral Raise Detection", annotated_frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
