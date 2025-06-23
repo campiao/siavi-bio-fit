@@ -9,8 +9,9 @@ from command import get_command
 from voice_launcher import start_voice
 from repository import get_data, Player
 
-# === Control flag for thread ===
-voice_thread_stop_flag = threading.Event()
+
+# === Start voice recognition ===
+voice_thread, voice_thread_stop_flag = start_voice("en")
 
 # === Voice command loop ===
 def voice_command_loop():
@@ -39,10 +40,7 @@ def on_closing():
     print("Shutting down voice recognition...")
     app.destroy()
     
-# === Start voice recognition ===
-voice_thread = threading.Thread(target=voice_command_loop)
-voice_thread.start()
-start_voice("en")
+
 
 # === Exercise commands ===
 def run_bicepcurl():
