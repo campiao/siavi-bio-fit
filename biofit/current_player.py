@@ -1,8 +1,8 @@
 player = None
 
-def clear():
+def clear_player():
     global player
-    player = ""
+    player = None
 
 def set_player(value):
     global player

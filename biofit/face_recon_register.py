@@ -9,7 +9,7 @@ from voice_launcher import start_voice
 from command import get_command, clear
 import subprocess
 import sys
-import current_player
+from current_player import set_player, clear_player
 
 cap = cv2.VideoCapture(0)
 window_name = "SIAVIBioFitG4"
@@ -63,7 +63,7 @@ def define_encoding(frame_rgb) -> bool:
                     gender=gender,
                     face_encoding=encoding.tolist())
             db.register(player)
-            current_player.set_player = player
+            set_player(player)
             print("Face centralized. Encoding generated with success!")
             register = False
             return True
@@ -109,8 +109,8 @@ while True:
                     if True in matches:
                         face_distances = face_recognition.face_distance(saved_encodings, face_encoding)
                         idx = np.argmin(face_distances)
+                        set_player(player)
                         player = players[idx]
-                        current_player.set_player = player
                         nome = player.name
                         found = True
                         register = False
@@ -197,19 +197,19 @@ while True:
 
         if get_command() == "log out":
             clear()
-            current_player.clear()
+            clear_player()
             player = None
             found = False
             register = False
 
-        if time.time() - ultimo_tempo > 7:
+        if time.time() - ultimo_tempo > 5:
             text3 = "REDIRECTING TO EXERCISES"
             (tw, th), _ = cv2.getTextSize(text3, fonte, 0.9, 2)
             x = (largura - tw) // 2
             y = th + int(altura * 0.93)
             cv2.putText(frame, text3, (x, y), fonte, 0.9, (0, 255, 0), 2)
             
-        if time.time() - ultimo_tempo > 9:
+        if time.time() - ultimo_tempo > 7:
             run_app_menu()
             close_window()
             break
@@ -227,13 +227,11 @@ while True:
     key = cv2.waitKey(1)
     if key == 27:
         break
-    elif key == ord('f'):  # Tecla 'f' → tirar foto
+    elif key == ord('f'): 
         if not found:
             found = define_encoding(frame_rgb)
     elif key == ord('r'):
         if not register and not found:
             register = True
             
-
-# Libera a câmera e fecha a janela
 close_window()
