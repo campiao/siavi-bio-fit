@@ -25,15 +25,13 @@ boot = True
 found = False
 register = False
 
-voice_thread = None
-voice_thread_stop_flag = threading.Event()
-
 registerIndex = 0
 name = None
 gender = None
 age = None
 
-start_voice("en")
+voice_thread, voice_thread_stop_flag = start_voice("en")
+
 
 def run_app_menu():
     subprocess.Popen([sys.executable, "biofit/app_menu.py"])
