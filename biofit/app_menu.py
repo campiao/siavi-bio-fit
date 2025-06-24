@@ -1,7 +1,7 @@
 import time
 import threading
 import customtkinter
-from command import get_command
+from command import get_command, clear
 import voice_launcher
 from repository import get_data
 import current_player as cp
@@ -25,22 +25,27 @@ def voice_command_loop(voice_thread_stop_flag):
         if command:
             command = command.lower()
             if "bicep" in command:
+                clear()
                 info_label.configure(text="Starting bicep curl exercise.")
                 run_bicepcurl()
                 end_level()
             elif "jumping jacks" in command:
+                clear()
                 info_label.configure(text="Starting jumping jacks exercise.")
                 run_jumpingjacks()
                 end_level()
             elif "lateral raise" in command:
+                clear()
                 info_label.configure(text="Starting lateral raise exercise.")
                 run_lateralraise()
                 end_level()
             elif "exit" in command:
+                clear()
                 #info_label.configure(text="Exiting...")
                 on_closing()
                 break
             elif "log out" in command:
+                clear()
                 #info_label.configure(text="Logging out...")
                 on_closing()
                 break
@@ -142,7 +147,6 @@ def run_app_menu():
     customtkinter.set_appearance_mode("System")
     customtkinter.set_default_color_theme("blue")
     app.geometry("300x480")
-    app.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Agora sim, passa para a função que configura os widgets
     setup_widgets(app)
