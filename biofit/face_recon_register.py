@@ -1,3 +1,4 @@
+import importlib
 import threading
 import cv2
 import datetime
@@ -7,9 +8,8 @@ import repository as db
 import time
 from voice_launcher import start_voice
 from command import get_command, clear
-import subprocess
-import sys
-from current_player import set_player, clear_player
+import current_player
+import app_menu
 
 cap = cv2.VideoCapture(0)
 window_name = "SIAVIBioFitG4"
@@ -33,8 +33,8 @@ age = None
 voice_thread, voice_thread_stop_flag = start_voice("en")
 
 
-def run_app_menu():
-    subprocess.Popen([sys.executable, "biofit/app_menu.py"])
+#def run_app_menu():
+#    subprocess.Popen([sys.executable, "biofit/app_menu.py"])
 
 # Libera a câmera e fecha a janela
 def close_window():
@@ -63,7 +63,7 @@ def define_encoding(frame_rgb) -> bool:
                     gender=gender,
                     face_encoding=encoding.tolist())
             db.register(player)
-            set_player(player)
+            current_player.set_player(player)
             print("Face centralized. Encoding generated with success!")
             register = False
             return True
@@ -109,11 +109,11 @@ while True:
                     if True in matches:
                         face_distances = face_recognition.face_distance(saved_encodings, face_encoding)
                         idx = np.argmin(face_distances)
-                        set_player(player)
                         player = players[idx]
                         nome = player.name
                         found = True
                         register = False
+                        current_player.set_player(player)
                         with open("current_player_id.txt", "w") as f:
                             f.write(player.id)
                 ultimo_tempo = agora
@@ -197,7 +197,7 @@ while True:
 
         if get_command() == "log out":
             clear()
-            clear_player()
+            current_player.clear_player()
             player = None
             found = False
             register = False
@@ -210,9 +210,20 @@ while True:
             cv2.putText(frame, text3, (x, y), fonte, 0.9, (0, 255, 0), 2)
             
         if time.time() - ultimo_tempo > 7:
-            run_app_menu()
-            close_window()
-            break
+            cap.release()
+            cv2.destroyAllWindows()
+            app_menu.run_app_menu()
+            print("WTDFDDDD")
+            found = False
+            register = False
+            if get_command() == "log out":
+                clear()
+                current_player.clear_player()
+                player = None
+                cap = cv2.VideoCapture(0)
+            else:
+                close_window()
+                break
 
     cv2.imshow(window_name, frame)
 

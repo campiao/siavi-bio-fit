@@ -2,23 +2,24 @@ import time
 import threading
 import customtkinter
 from command import get_command
-from voice_launcher import start_voice
+import voice_launcher
 from repository import get_data
 import current_player as cp
 import bicep_curl
 import lateral_raise
 import jumping_jacks
 
-app = customtkinter.CTk()
+app = None
 
 info_label = None
 labels = []
+info_frame = None
 
 # === Start voice recognition ===
-voice_thread, voice_thread_stop_flag = start_voice("en")
+#voice_thread, voice_thread_stop_flag = start_voice("en")
 
 # === Voice command loop ===
-def voice_command_loop():
+def voice_command_loop(voice_thread_stop_flag):
     while not voice_thread_stop_flag.is_set():
         command = get_command()
         if command:
@@ -36,22 +37,34 @@ def voice_command_loop():
                 run_lateralraise()
                 end_level()
             elif "exit" in command:
-                info_label.configure(text="Exiting...")
+                #info_label.configure(text="Exiting...")
+                on_closing()
+                break
+            elif "log out" in command:
+                #info_label.configure(text="Logging out...")
                 on_closing()
                 break
         
         time.sleep(0.1)
 
-voice_loop_thread = threading.Thread(target=voice_command_loop, daemon=True)
-voice_loop_thread.start()
+
 
 # === Close Handler ===
 def on_closing():
-    voice_thread_stop_flag.set()      # Signal the thread to stop
-    if voice_thread and voice_thread.is_alive():
-        voice_thread.join(timeout=2)  # define timeout!
-    print("Shutting down voice recognition...")
-    app.destroy()
+    #voice_thread_stop_flag.set()      # Signal the thread to stop
+    #if voice_thread and voice_thread.is_alive():
+        #voice_thread.join(timeout=2)  # define timeout!
+    #print("Shutting down voice recognition...")
+    global app
+    if app is not None:
+        try:
+            if app.winfo_exists():
+                app.destroy()
+        except:
+            pass
+        finally:
+            app = None
+    
 
 
 # === Exercise commands ===
@@ -64,46 +77,36 @@ def run_jumpingjacks():
 def run_lateralraise():
     lateral_raise.do_lateral_raises()
 
-# Load current player ID
-with open("current_player_id.txt", "r") as f:
-    current_id = f.read().strip()
-
-# Get all players
-players = get_data()
-
-# Find current player by ID
-current_player = next((p for p in players if p.id == current_id), None)
-cp.set_player(current_player)
-data = [f"Name: {current_player.name}", f"Age: {current_player.age}", f"Gender: {current_player.gender}", f"Level: {current_player.level}"]
 
 # === GUI Setup ===
-customtkinter.set_appearance_mode("System")
-customtkinter.set_default_color_theme("blue")
-app.geometry("300x480")
-app.protocol("WM_DELETE_WINDOW", on_closing)
+def setup_widgets(app):
+    print(app)
+    global info_label, labels, info_frame
 
-info_frame = customtkinter.CTkFrame(app)
-info_frame.pack(pady=10)
+    info_frame = customtkinter.CTkFrame(app)
+    info_frame.pack(pady=10)
 
+    labels.clear()
+    data = [f"Name: ", f"Age: ", f"Gender:", f"Level: "]
+    for i, txt in enumerate(data):
+        label = customtkinter.CTkLabel(info_frame, text=txt)
+        label.grid(row=0, column=i, padx=5)
+        labels.append(label)
 
-for i, txt in enumerate(data):
-    label = customtkinter.CTkLabel(info_frame, text=txt)
-    label.grid(row=0, column=i, padx=5)
+    title = customtkinter.CTkLabel(app, text="Exercises")
+    title.pack(padx=20, pady=20)
 
-title = customtkinter.CTkLabel(app, text="Exercises")
-title.pack(padx=20, pady=20)
+    jjBTN = customtkinter.CTkButton(app, text="Jumping Jacks", command=run_jumpingjacks)
+    jjBTN.pack(padx=20, pady=20)
 
-jjBTN = customtkinter.CTkButton(app, text="Jumping Jacks", command=run_jumpingjacks)
-jjBTN.pack(padx=20, pady=20)
+    bcBTN = customtkinter.CTkButton(app, text="Bicep Curls", command=run_bicepcurl)
+    bcBTN.pack(padx=20, pady=20)
 
-bcBTN = customtkinter.CTkButton(app, text="Bicep Curls", command=run_bicepcurl)
-bcBTN.pack(padx=20, pady=20)
+    lrBTN = customtkinter.CTkButton(app, text="Lateral Raise", command=run_lateralraise)
+    lrBTN.pack(padx=20, pady=20)
 
-lrBTN = customtkinter.CTkButton(app, text="Lateral Raise", command=run_lateralraise)
-lrBTN.pack(padx=20, pady=20)
-
-info_label = customtkinter.CTkLabel(app, text="")
-info_label.pack(pady=20)
+    info_label = customtkinter.CTkLabel(app, text="")
+    info_label.pack(pady=20)
 
 
 def update_labels(nova_data):
@@ -123,4 +126,36 @@ def end_level():
     update_labels(data)
 
 # === Run the GUI ===
-app.mainloop()
+def run_app_menu():
+    global app
+    if app is not None:
+        try:
+            if app.winfo_exists():
+                app.destroy()
+        except Exception as e:
+            print("Erro ao destruir app:", e)
+        finally:
+            app = None
+
+    # Cria uma nova instância do app (janela principal)
+    app = customtkinter.CTk()
+    customtkinter.set_appearance_mode("System")
+    customtkinter.set_default_color_theme("blue")
+    app.geometry("300x480")
+    app.protocol("WM_DELETE_WINDOW", on_closing)
+
+    # Agora sim, passa para a função que configura os widgets
+    setup_widgets(app)
+
+
+    end_level()
+
+    voice_loop_thread = threading.Thread(
+        target=voice_command_loop,
+        args=(voice_launcher.voice_thread_stop_flag,),
+        daemon=True
+    )
+    voice_loop_thread.start()
+    app.mainloop()
+
+
