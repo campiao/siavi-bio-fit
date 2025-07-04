@@ -1,6 +1,6 @@
 # SiaviBIO Fit
 
-A fitness app that combines facial recognition and gesture detection for a personalized and effective experience! Users are authenticated using facial data, and can use the app to count their repetitions of 3 different exercises: bicep curls, jumping jacks, and lateral raises.
+A fitness app that combines facial recognition, voice recognition, and gesture detection for a personalized and effective experience! Users are authenticated using facial data, and can use the app to count their repetitions of 3 different exercises: bicep curls, jumping jacks, and lateral raises.
 
 Users can control everything inside the app using their voice, by using english commands. In fact, the user registration is done entirely using voice commands!
 
