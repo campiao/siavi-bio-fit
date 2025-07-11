@@ -34,6 +34,11 @@ Finally, start the application using:
 python .\biofit\main.py 
 ```
 
+If you want to skip the facial recognition step (you might just want to look at the exercises part of the application) run the following command:
+```bash
+python .\biofit\app_menu.py
+```
+
 ## License
 MIT License
 
